@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Ground
+  - Asteroid
+  - Projectile
   layers:
   - Default
   - TransparentFX
@@ -13,13 +16,13 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - UIManagedFOV
+  - UINoFOV
+  - Character
+  - Shield
+  - Interior
+  - Exterior
+  - InteriorExterior
   - 
   - 
   - 
