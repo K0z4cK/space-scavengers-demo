@@ -18,7 +18,7 @@ namespace SpaceScavengers
 
         private void Awake()
         {
-            _uiManager.Init(_player.StartAccelerate, _player.StopAccelerate, _player.Shoot);
+            _uiManager.Init(_player.StartAccelerate, _player.StopAccelerate, _player.StartBrake, _player.StopBrake, _player.Shoot);
 
             _player.Init(_startPlayerHealth, PlayerHit);
         }

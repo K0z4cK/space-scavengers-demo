@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using VSX.UniversalVehicleCombat;
 
 namespace SpaceScavengers
 {
@@ -11,14 +13,18 @@ namespace SpaceScavengers
 
         [Header("Controll")]
         [SerializeField] private VariableJoystick _variableJoystick;
-        [SerializeField] private float _accelerateSpeed;
+        [SerializeField] private float _accelerateForce;
+        [SerializeField] private float _brakeForce;
         [SerializeField] private float _rotateSpeed;
         [SerializeField] private float _tiltAmount;
         [SerializeField] private float _tiltSpeed;
 
-        [Header("Projectiles")]
+        [Header("Modules")]
+        [SerializeField] private Triggerable _triggerable;
+
+        /*[Header("Projectiles")]
         [SerializeField] private float _projectileForce;
-        [SerializeField] private Transform _projectilesSpawnPosition;
+        [SerializeField] private Transform _projectilesSpawnPosition;*/
 
         [Header("Shield")]
         [SerializeField] private float _shieldTime;
@@ -31,6 +37,7 @@ namespace SpaceScavengers
         private int _healthCount;
 
         private bool _isAccelerating = false;
+        private bool _isBraking = false;
         private bool _isShieldActivated = false;
 
         private void Awake()
@@ -50,10 +57,29 @@ namespace SpaceScavengers
 
         public void StopAccelerate() => _isAccelerating = false;
 
+        public void StartBrake() => _isBraking = true;
+
+        public void StopBrake() => _isBraking = false;
+
         public void Accelerate()
         {
-            _rigidbody.AddForce(_transform.forward * _accelerateSpeed);
+            _rigidbody.AddForce(_transform.forward * _accelerateForce);
         }
+
+        public void Brake()
+        {
+            if (_isAccelerating) return;
+
+            Vector3 brakeForceVector = -_rigidbody.velocity.normalized * _brakeForce * Time.fixedDeltaTime;
+            if (_rigidbody.velocity.magnitude < brakeForceVector.magnitude)
+            {
+                _rigidbody.velocity = Vector3.zero;
+                return;
+            }
+
+            _rigidbody.AddForce(brakeForceVector);
+        }
+
 
         public void Rotate()
         {
@@ -66,41 +92,42 @@ namespace SpaceScavengers
 
             float newAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.fixedDeltaTime * _rotateSpeed);
 
-           /* float tilt = direction.x * _tiltAmount;
+            _rigidbody.MoveRotation(Quaternion.Euler(0, newAngle, HandleTilt(direction)));
+        }
 
-            float currentTilt = transform.eulerAngles.z;
-            if (currentTilt > 180) currentTilt -= 360;
+        public void Rotate(Vector2 direction)
+        {
+            if (direction.sqrMagnitude <= 0) return;
 
-            float newTilt = Mathf.Lerp(currentTilt, -tilt, Time.fixedDeltaTime * _tiltSpeed);*/
+            float targetAngle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+            float currentAngle = transform.eulerAngles.y;
+
+            float newAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.fixedDeltaTime * _rotateSpeed);
 
             _rigidbody.MoveRotation(Quaternion.Euler(0, newAngle, HandleTilt(direction)));
         }
 
         private float HandleTilt(Vector2 direction)
         {
-            float currentTilt = 0;
+            float targetAngle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+            float currentAngle = transform.eulerAngles.y;
+            if (currentAngle > 180) currentAngle -= 360;
 
-            if (direction.sqrMagnitude <= 0)
-            {
-                currentTilt = transform.eulerAngles.z;
-                //if (currentTilt > 180) currentTilt -= 360;
+            float angleDifference = Mathf.DeltaAngle(currentAngle, targetAngle);
 
-                return Mathf.Lerp(currentTilt, 0, Time.fixedDeltaTime * _tiltSpeed);
-            }
+            float targetTilt = Mathf.Clamp(-angleDifference * 0.5f, -_tiltAmount, _tiltAmount);
 
-            float tiltDirection = Mathf.Sign(direction.x);
-            float targetTilt = tiltDirection * _tiltAmount;
-
-            currentTilt = transform.eulerAngles.z;
-            //if (currentTilt > 180) currentTilt -= 360;
+            float currentTilt = transform.eulerAngles.z;
+            if (currentTilt > 180) currentTilt -= 360;
 
             return Mathf.Lerp(currentTilt, targetTilt, Time.fixedDeltaTime * _tiltSpeed);
-            //transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, newTilt);
         }
 
         public void Shoot()
         {
-            ProjectilesController.instance.SpawnProjectile(_projectilesSpawnPosition.position, _transform.up * _projectileForce);
+            _triggerable.TriggerOnce();
+            //_moduleMount.Modules.ForEach(module => { module.
+            //ProjectilesController.instance.SpawnProjectile(_projectilesSpawnPosition.position, _transform.up * _projectileForce);
         }
 
         public void GetHit()
@@ -129,6 +156,8 @@ namespace SpaceScavengers
 
             if (_isAccelerating)
                 Accelerate();
+            if (_isBraking)
+                Brake();
         }
     }
 }

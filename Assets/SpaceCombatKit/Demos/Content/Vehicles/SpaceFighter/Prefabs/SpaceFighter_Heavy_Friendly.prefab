@@ -2503,7 +2503,7 @@ MonoBehaviour:
       outWeight: 0.33333334
     m_PreInfinity: 2
     m_PostInfinity: 2
-    m_RotationOrder: 0
+    m_RotationOrder: 4
   exhaustColorGradient:
     serializedVersion: 2
     key0: {r: 0, g: 0.6666665, b: 1, a: 1}
